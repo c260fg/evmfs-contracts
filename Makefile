@@ -436,4 +436,9 @@ install-doc:
 	  -t \
 	  $(DOC_DIR)
 
+uninstall-contracts:
+
+	true
+
+
 .PHONY: $(PHONY_TARGETS)
