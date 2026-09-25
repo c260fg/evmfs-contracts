@@ -24,6 +24,7 @@
 #    along with this program.
 #    If not, see <https://www.gnu.org/licenses/>.
 
+_NPM ?= false
 SHELL=bash
 PREFIX ?= /usr/local
 _PROJECT=evmfs
@@ -34,7 +35,7 @@ DOC_DIR=$(DESTDIR)$(PREFIX)/share/doc/$(_PROJECT)
 USR_DIR=$(DESTDIR)$(PREFIX)
 BIN_DIR=$(DESTDIR)$(PREFIX)/bin
 LIB_DIR=$(DESTDIR)$(PREFIX)/lib/$(_PROJECT)
-NODE_DIR=$(PREFIX)/lib/node_modules/$(_PROJECT_NPM)
+NODE_DIR=$(DESTDIR)$(PREFIX)/lib/node_modules/$(_PROJECT_NPM)
 BUILD_NPM_DIR=build
 BUILD_EVM_MAKE_DIR=evm-make-build
 BUILD_CONTRACTS_DIR=contracts-build
@@ -255,23 +256,73 @@ install: install-scripts install-doc install-examples
 
 install-scripts:
 
-	$(_INSTALL_DIR) \
-	  "$(LIB_DIR)/nodejs/lib"
-	for _file in $(NPM_FILES); do
-	  $(_INSTALL_FILE) \
-	    "$${_file}" \
-	    "$(LIB_DIR)/nodejs/$${_file}"; \
-	  ln \
-	    -s \
-            "$(PREFIX)/lib/$(_PROJECT)/nodejs/$${_file}" \
-	    "$(LIB_DIR)/$${_file}" || \
+	if [[ "$(_NPM)" == "false" ]]; then \
+	  $(_INSTALL_DIR) \
+	    "$(LIB_DIR)/nodejs"; \
+	  cp \
+	    -r \
+	    $$(printf \
+	         "$${PWD}/%s " \
+	         $$(cat \
+	              "$${PWD}/package.json" | \
+	              jq \
+	                --raw-output \
+	                '.files[]')) \
+	    "$(LIB_DIR)/nodejs"; \
+	  $(_MAKE_EXE) \
+	    "$(LIB_DIR)/nodejs/$(_PROJECT_NPM)"; \
+	  for _program in \
+	    $(_PROGRAMS); do \
+	    if [[ ! -s "$(BIN_DIR)/$${_program}" && \
+	          ! -e "$(BIN_DIR)/$${_program}" ]]; then \
+	      $(_MAKE_LINK) \
+	        "$(PREFIX)/lib/$(_PROJECT_NPM)/nodejs/$${_program}" \
+	        "$(BIN_DIR)/$${_program}"; \
+	    fi; \
+	  done; \
+	  rm \
+	    "$(LIB_DIR)/node_modules" || \
+	    true; \
+	  if [[ ! -s "$(LIB_DIR)/node_modules" ]]; then \
+	    $(_MAKE_LINK) \
+	      "$(PREFIX)/lib/node_modules" \
+	      "$(LIB_DIR)/nodejs/node_modules"; \
+	  fi; \
+	  rm \
+	    -rf \
+	    "$(DESTDIR)$(PREFIX)/lib/node_modules/$(_PROJECT)" \
+	    "$(DESTDIR)$(PREFIX)/lib/node_modules/$(_PROJECT_NPM)"; \
+	  if [[ ! -s "$(DESTDIR)$(PREFIX)/lib/node_modules/$(_PROJECT)" ]]; then \
+	    $(_MAKE_LINK) \
+	      "$(PREFIX)/lib/$(_PROJECT_NPM)/nodejs" \
+	      "$(DESTDIR)$(PREFIX)/lib/node_modules/$(_PROJECT)"; \
+	  fi; \
+	  if [[ ! -s "$(DESTDIR)$(PREFIX)/lib/node_modules/$(_PROJECT_NPM)" ]]; then \
+	    $(_MAKE_LINK) \
+	      "$(PREFIX)/lib/$(_PROJECT_NPM)/nodejs" \
+	      "$(DESTDIR)$(PREFIX)/lib/node_modules/$(_PROJECT_NPM)" || \
+	      true; \
+	  fi; \
+	  if [[ ! -s "$(DESTDIR)$(PREFIX)/lib/$(_PROJECT)" ]]; then \
+	    $(_MAKE_LINK) \
+	      "$(PREFIX)/lib/$(_PROJECT_NPM)/nodejs" \
+	      "$(DESTDIR)$(PREFIX)/lib/$(_PROJECT)" || \
+	      true; \
+	  fi; \
+	  if [[ ! -s "$(DESTDIR)$(PREFIX)/lib/$(_PROJECT_NPM)" ]]; then \
+	    $(_MAKE_LINK) \
+	      "$(PREFIX)/lib/$(_PROJECT_NPM)/nodejs" \
+	      "$(DESTDIR)$(PREFIX)/lib/$(_PROJECT_NPM)" || \
+	      true; \
+	  fi; \
+	elif [[ "$(_NPM)" == "true" ]]; then \
+	  make \
+	    install-npm; \
+	  $(_MAKE_LINK) \
+	    "$(PREFIX)/lib/node_modules/$(_PROJECT_NPM)" \
+	    "$(LIB_DIR)/nodejs" || \
 	  true; \
-	done
-	# ln \
-	#   -s \
-	#   "$(PREFIX)/lib/$(_PROJECT)/node/lib$(_PROJECT)" \
-	#   "$(LIB_DIR)/$(_PROJECT)-js" || \
-	# true
+	fi;
 
 install-contracts-sources:
 
@@ -365,7 +416,7 @@ install-npm:
 	  "$(DESTDIR)$(PREFIX)/lib"; \
 	ln \
 	  -s \
-	  "$(NODE_DIR)" \
+	  "$(PREFIX)/lib/node_modules/$(_PROJECT_NPM)" \
 	  "$(LIB_DIR)" || \
 	true
 
