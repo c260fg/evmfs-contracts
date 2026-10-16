@@ -165,14 +165,14 @@ function
 
 function
   _data_type_check(
-    _data_type_check) {
+    _data_type) {
   let
     _data_type_get,
     _msg;
   const
     _data_type_type =
       typeof(
-        _data_type_type);
+        _data_type);
   const
     _default =
       "abi";
