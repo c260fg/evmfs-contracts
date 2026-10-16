@@ -262,6 +262,16 @@ function
         "path";
     }
   }
+  if ( _output_type != "object" &&
+       _output_type != "path" ) {
+    _msg =
+      `Unknown value '${_output_type}' ` +
+      `for variable 'output type'.`;
+    _msg_error(
+      _msg,
+      0);
+    throw _msg;
+  }
   return _output_type;
 }
 
