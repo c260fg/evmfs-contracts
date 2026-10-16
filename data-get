@@ -289,11 +289,11 @@ function
     false;
   _default =
     "";
-  if ( _contract_version_type == "undefined" ) {
+  if ( _contract_version_type === "undefined" ) {
     _contract_version_get =
       true;
   }
-  else if ( _contract_version_type == "string" ) {
+  else if ( _contract_version_type === "string" ) {
     if ( _contract_version.length < 1 ) {
       _msg =
         "Output type not specified, setting " +
